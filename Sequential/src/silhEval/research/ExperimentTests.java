@@ -45,14 +45,14 @@ public class ExperimentTests {
 			return;
 		}
 
-		if ((Utils.index(args, "performance")) != -1) {
-			performanceTest(args);
+		if ((Utils.index(args, "performancePPS")) != -1) {
+			performanceTestPPS(args);
 			System.out.println("Done!");
 			return;
 		}
 
-		if ((Utils.index(args, "naive")) != -1) {
-			performanceTestNaive(args);
+		if ((Utils.index(args, "performanceUniform")) != -1) {
+			performanceTestUniform(args);
 			System.out.println("Done!");
 			return;
 		}
@@ -198,7 +198,7 @@ public class ExperimentTests {
 
 	}
 
-	private static void performanceTest(String[] args) throws IOException {
+	private static void performanceTestPPS(String[] args) throws IOException {
 
 		int index = -1;
 
@@ -288,8 +288,14 @@ public class ExperimentTests {
 
 		log.writeLn("***\n");
 
-		int t = (int) Math
+		int t;
+		
+		if ((index = Utils.index(args, "t")) != -1) {
+			t = Integer.parseInt(args[index + 1]);
+		} else {
+			t = (int) Math
 				.ceil((1 / (2 * Math.pow(eps, 2))) * (Math.log(4) + Math.log(n) + Math.log(k) - Math.log(delta)));
+		}
 
 		System.out.println("Sampling phase - Minumum expected sample size: " + t);
 
@@ -1117,7 +1123,7 @@ public class ExperimentTests {
 
 	}
 
-	private static void performanceTestNaive(String[] args) throws IOException {
+	private static void performanceTestUniform(String[] args) throws IOException {
 
 		int index = -1;
 
@@ -1137,6 +1143,7 @@ public class ExperimentTests {
 		} else {
 			throw new IllegalArgumentException("no dataset source");
 		}
+		
 
 		if ((index = Utils.index(args, "log")) != -1) {
 			logFile = args[index + 1];
@@ -1206,9 +1213,15 @@ public class ExperimentTests {
 		}
 
 		log.writeLn("***\n");
-
-		int t = (int) Math
+		
+		int t;
+		
+		if ((index = Utils.index(args, "t")) != -1) {
+			t = Integer.parseInt(args[index + 1]);
+		} else {
+			t = (int) Math
 				.ceil((1 / (2 * Math.pow(eps, 2))) * (Math.log(4) + Math.log(n) + Math.log(k) - Math.log(delta)));
+		}
 
 		System.out.println("Sampling phase - Minumum expected sample size: " + t);
 
