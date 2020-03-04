@@ -7,7 +7,7 @@ The "master" branch of this git features the code to be used as reference for th
 
 ## Description
 
-This git comprehends both versions of the algorithm: Sequential and Map-Reduce.
+This git contains both versions of the algorithm: Sequential and Map-Reduce.
 
 ## Sequential code
 
@@ -18,7 +18,7 @@ You can exploit the Main method contained in silhEval.research.ExperimentTests t
 
 The Main admits various kinds of operations
 
-# Random generation
+### Random generation
 example: java silhEval.research.ExperimentTests randomGen file outfile elements 100000 dimensions 3 outliers 4 minorRay 1 majorRay 10000 genseed 100
 
 Genrates a collection of comma separated double d-dimension values structured as a collection of n points inside a sphere of a certain radius (minorRay) and few outliers placed on the surface of a sphere of another radius (majorRay). Parameters:
@@ -30,7 +30,7 @@ Genrates a collection of comma separated double d-dimension values structured as
   - majorRay: radius of the outer sphere
   - genseed: seed for random generation
   
-# Clusterize
+### Clusterize
 example: java silhEval.research.ExperimentTests clusterize dataset infile output outfile clusters 10 limiter , ext kMedoids seed 100
 
 Performs the clustering of a dataset using kMeans (if not specified) or kMedoids (if specified). Accepted file format is made by one element per line. Parameters:
@@ -42,7 +42,7 @@ Performs the clustering of a dataset using kMeans (if not specified) or kMedoids
   - kMedoids: if present, the clustering is performed using the provided implementation of the kMedoids algorithm. Elsewhere, kMeans is used
   - seed: seed for random generation
   
-# correctness test 1
+### Correctness test 1
 example: java silhEval.research.ExperimentTests correctness confs 2 conf1 dataset1 conf2 datasets2 log repofile csv repo.csv epsilon 0.1 delta 0.1 t 1024 runs 100
 
 Performs correctness tests of type 1: for each provided input, computes the exact silhouette, the PPS sampling based silhouette and the Uniform sampling based, observing errors in approximation and if approximated methods are capable to identify the best silouette configurations. CSV accepted, last value is the cluester index. Parameters
@@ -55,7 +55,7 @@ Performs correctness tests of type 1: for each provided input, computes the exac
   - t: expected sample size (calculated using other parameters, if absent)
   - runs: number of trials
 
-# correctness test 2
+### Correctness test 2
 example: java silhEval.research.ExperimentTests correctness2 confs 2 conf1 dataset1 conf2 datasets2 log repofile epsilon 0.1 delta 0.1 t 1024 runs 100
 
 Performs correctness tests of type 1: for each provided input, computes the exact silhouette, the average of a number of PPS sampling based silhouette approximation rounds and the average of a number Uniform sampling based approximation rounds and the generalized simplified silhouette, observing errors in approximation and if approximated methods are capable to identify the best silouette configurations. CSV accepted, last value is the cluester index. Parameters
@@ -67,7 +67,7 @@ Performs correctness tests of type 1: for each provided input, computes the exac
   - t: expected sample size (calculated using other parameters, if absent)
   - runs: number of approximation rounds for sampling-based methods
 
-# performance PPS
+### Performance PPS
 example: example: java silhEval.research.ExperimentTests performancePPS dataset inputfile log repofile csv repo.csv epsilon 0.1 delta 0.1 t 1024 append true
 
 Performs a run of PPS sampling based silhouette approximation. Parameters:
@@ -79,7 +79,7 @@ Performs a run of PPS sampling based silhouette approximation. Parameters:
   - t: expected sample size (calculated using other parameters, if absent)
   - append: if true, appends the results to an existing csv file, elsewhere, a new file is created
   
-# performance Uniform
+### Performance Uniform
 example: java silhEval.research.ExperimentTests performanceUniform dataset inputfile log repofile csv repo.csv epsilon 0.1 delta 0.1 t 1024 append true
 
 Performs a run of Uniform sampling based silhouette approximation. Parameters:
@@ -91,7 +91,7 @@ Performs a run of Uniform sampling based silhouette approximation. Parameters:
   - t: expected sample size (calculated using other parameters, if absent)
   - append: if true, appends the results to an existing csv file, elsewhere, a new file is created
   
-# exact only
+### Exact only
 example: java silhEval.research.ExperimentTests exactonly dataset inputfile log repofile csv repo.csv append true
 
 Computes the exact silhouette using the baseline algorithm. Parameters:
