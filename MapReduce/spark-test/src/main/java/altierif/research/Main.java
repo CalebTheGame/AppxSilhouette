@@ -62,8 +62,8 @@ public class Main {
 			return;
 		}
 
-		if ((Utils.index(args, "performance")) != -1) {
-			performanceTest(args, spark);
+		if ((Utils.index(args, "performancePPS")) != -1) {
+			PPSSamplingAppx(args, spark);
 			System.out.println("Done!");
 			return;
 		}
@@ -80,8 +80,8 @@ public class Main {
 			return;
 		}
 
-		if ((Utils.index(args, "naive")) != -1) {
-			naiveSampling(args, spark);
+		if ((Utils.index(args, "performanceUniform")) != -1) {
+			UniformSamplingAppx(args, spark);
 			System.out.println("Done!");
 			return;
 		}
@@ -90,6 +90,7 @@ public class Main {
 
 	}
 
+	@Deprecated
 	private static void exactSilhOnly(String[] args, SparkSession spark) {
 		// Loads data.
 		String outfile = Utils.findStringParam("outfile", args);
@@ -153,7 +154,7 @@ public class Main {
 
 	}
 
-	private static void performanceTest(String[] args, SparkSession spark) {
+	private static void PPSSamplingAppx(String[] args, SparkSession spark) {
 
 		// ...
 		Dataset<Row> loaded;
@@ -268,8 +269,9 @@ public class Main {
 		spark.stop();
 
 	}
-
-	private static void naiveSampling(String[] args, SparkSession spark) {
+	
+	@Deprecated
+	private static void UniformSamplingAppx(String[] args, SparkSession spark) {
 
 		// ...
 
