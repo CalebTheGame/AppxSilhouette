@@ -99,3 +99,31 @@ Computes the exact silhouette using the baseline algorithm. Parameters:
   - log: relative path to output file
   - csv: relative path to output csv file
   - append: if true, appends the results to an existing csv file, elsewhere, a new file is created
+  
+
+## Map-Reduce code
+This code exploits the java Apache SPark official APIs and libraries.
+
+## Usage
+You can exploit the Main method contained in altierif.research.Main to perform tests and experiments
+
+The Main admits various kinds of operations
+
+### Generation
+This functionality is actually deprecated, will be replaced by a new one, aligned with the sequential version
+
+### importDb
+
+example: spark-submit --class altierif.research.Main jarfile mode importDb  source infile path outfile
+
+Imports a clustered dataset (format: csv with one header line, each line with elements values and cluster index) and stores it as a Dataset<Row> with features column saved as a DenseArray. Parameters:
+  - source: relative path to the source file ON THE HDFS
+  - path: relative path to the position ON HDFS where the Dataset object is stored
+  
+### importDb2
+
+example: spark-submit --class altierif.research.Main jarfile mode importDb  source infile path outfile
+
+Imports a clustered dataset (format: csv with one header line, each line with elements values and cluster index) and stores it as a Dataset<Row> with features column saved as a simple array od doubles. Used to import datasets to be processed using Spark default API. Parameters:
+  - source: relative path to the source file ON THE HDFS
+  - path: relative path to the position ON HDFS where the Dataset object is stored
