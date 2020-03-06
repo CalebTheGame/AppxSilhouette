@@ -23,7 +23,8 @@ import org.apache.spark.sql.types.StructType;
 import altierif.utils.Utils;
 
 public class DatasetCreator {
-
+	
+	@Deprecated
 	public static void generateAndStore(String[] args, SparkSession spark) throws IOException {
 
 		String file = Utils.findStringParam("path", args);
