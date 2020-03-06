@@ -68,7 +68,7 @@ Performs correctness tests of type 1: for each provided input, computes the exac
   - runs: number of approximation rounds for sampling-based methods
 
 ### Performance PPS
-example: example: java silhEval.research.ExperimentTests performancePPS dataset inputfile log repofile csv repo.csv epsilon 0.1 delta 0.1 t 1024 append true
+example: java silhEval.research.ExperimentTests performancePPS dataset inputfile log repofile csv repo.csv epsilon 0.1 delta 0.1 t 1024 append true
 
 Performs a run of PPS sampling based silhouette approximation. Parameters:
   - dataset: relative path to input file
@@ -110,7 +110,7 @@ You can exploit the Main method contained in altierif.research.Main to perform t
 The Main admits various kinds of operations
 
 ### Generation
-This functionality is actually deprecated, will be replaced by a new one, aligned with the sequential version
+*** This functionality is actually deprecated, will be replaced by a new one, aligned with the sequential version ***
 
 ### importDb
 
@@ -122,8 +122,35 @@ Imports a clustered dataset (format: csv with one header line, each line with el
   
 ### importDb2
 
-example: spark-submit --class altierif.research.Main jarfile mode importDb  source infile path outfile
+example: spark-submit --class altierif.research.Main jarfile mode importDb2  source infile path outfile
 
 Imports a clustered dataset (format: csv with one header line, each line with elements values and cluster index) and stores it as a Dataset<Row> with features column saved as a simple array od doubles. Used to import datasets to be processed using Spark default API. Parameters:
   - source: relative path to the source file ON THE HDFS
   - path: relative path to the position ON HDFS where the Dataset object is stored
+
+### Performance PPS
+example: spark-submit --class altierif.research.Main jarfile mode performancePPS path datafile outfile csvout epsilon eps delta del t tvalue parsed true append false
+
+Performs a run of PPS sampling based silhouette approximation. Parameters:
+  - path: relative path to the position ON HDFS where the Dataset object is stored
+  - outfile: relative path to output file (csv format)
+  - epsilon: PPS error threshold
+  - delta: PPS probability threshold
+  - t: expected sample size (calculated using other parameters, if absent)
+  - parsed: set it to true if the source contains a parsed Dataser<Row> object
+  - append: if true, appends the results to an existing csv file, elsewhere, a new file is created
+  
+### Performance Spark
+example: spark-submit --class altierif.research.Main jarfile mode performanceSpark performanceUniform path datafile outfile csvout
+
+Performs a run of squared euclidean silhouette approximation, based on Spark's API Parameters. It only supports Dataset Imported using ImportDb2 mode:
+  - path: relative path to the position ON HDFS where the Dataset object is stored
+  - outfile: relative path to output file (csv format)
+  - append: if true, appends the results to an existing csv file, elsewhere, a new file is created
+  
+### Performance Uniform
+*** This functionality is actually deprecated ***
+  
+### Exact only
+*** This functionality is actually deprecated ***
+  
