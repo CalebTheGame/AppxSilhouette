@@ -21,7 +21,7 @@ The Main admits various kinds of operations
 ### Random generation
 example: java silhEval.research.ExperimentTests randomGen file outfile elements 100000 dimensions 3 outliers 4 minorRay 1 majorRay 10000 genseed 100
 
-Genrates a collection of comma separated double d-dimension values structured as a collection of n points inside a sphere of a certain radius (minorRay) and few outliers placed on the surface of a sphere of another radius (majorRay). Parameters:
+Generates a collection of comma separated double d-dimension values structured as a collection of n points inside a sphere of a certain radius (minorRay) and few outliers placed on the surface of a sphere of another radius (majorRay). Parameters:
   - file: relative path to output file
   - elements: number of elements of the inner sphere
   - minorRay: radius of the inner sphere
@@ -37,15 +37,15 @@ Performs the clustering of a dataset using kMeans (if not specified) or kMedoids
   - dataset: relative path to input file
   - output: relative path to output file
   - clusters: number of clusters
-  - limiter: character to be used as value saparator. Default blank.
-  - ext: if NOT present, an extra header line with some informations will be written (only for reusing generated dataset with this Main)
+  - limiter: character to be used as value separator. Default blank.
+  - ext: if NOT present, an extra header line with some information will be written (only for reusing generated dataset with this Main)
   - kMedoids: if present, the clustering is performed using the provided implementation of the kMedoids algorithm. Elsewhere, kMeans is used
   - seed: seed for random generation
   
 ### Correctness test 1
 example: java silhEval.research.ExperimentTests correctness confs 2 conf1 dataset1 conf2 datasets2 log repofile csv repo.csv epsilon 0.1 delta 0.1 t 1024 runs 100
 
-Performs correctness tests of type 1: for each provided input, computes the exact silhouette, the PPS sampling based silhouette and the Uniform sampling based, observing errors in approximation and if approximated methods are capable to identify the best silouette configurations. CSV accepted, last value is the cluester index. Parameters
+Performs correctness tests of type 1: for each provided input, computes the exact silhouette, the PPS sampling based silhouette and the Uniform sampling based, observing errors in approximation and if approximated methods are capable to identify the best silhouette configurations. CSV accepted, last value is the cluester index. Parameters
   - confs: number of configurations to test
   - conf1, conf2, conf3...: relative paths to input files
   - log: relative path to output file
@@ -58,7 +58,7 @@ Performs correctness tests of type 1: for each provided input, computes the exac
 ### Correctness test 2
 example: java silhEval.research.ExperimentTests correctness2 confs 2 conf1 dataset1 conf2 datasets2 log repofile epsilon 0.1 delta 0.1 t 1024 runs 100
 
-Performs correctness tests of type 1: for each provided input, computes the exact silhouette, the average of a number of PPS sampling based silhouette approximation rounds and the average of a number Uniform sampling based approximation rounds and the generalized simplified silhouette, observing errors in approximation and if approximated methods are capable to identify the best silouette configurations. CSV accepted, last value is the cluester index. Parameters
+Performs correctness tests of type 1: for each provided input, computes the exact silhouette, the average of a number of PPS sampling based silhouette approximation rounds and the average of a number Uniform sampling based approximation rounds and the generalized simplified silhouette, observing errors in approximation and if approximated methods are capable to identify the best silhouette configurations. CSV accepted, last value is the cluester index. Parameters
   - confs: number of configurations to test
   - conf1, conf2, conf3...: relative paths to input files
   - log: relative path to output file
