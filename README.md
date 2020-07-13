@@ -149,8 +149,8 @@ Performs a run of squared euclidean silhouette approximation, based on Spark's A
   - append: if true, appends the results to an existing csv file, elsewhere, a new file is created
   
 ### Performance Uniform
-*** This functionality is actually deprecated ***
   
 ### Exact only
-*** This functionality is actually deprecated ***
+
+### Frahling-solher heuristic only
   
