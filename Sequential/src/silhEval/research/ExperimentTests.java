@@ -18,6 +18,7 @@ import net.sf.javaml.tools.data.FileHandler;
 import silhEval.samplers.PPSSampler;
 import silhEval.samplers.UniformSampler;
 import silhEval.silhouettes.ExactSilhouette;
+import silhEval.silhouettes.FrahlerSolherSilhouette;
 import silhEval.silhouettes.SamplingSilhouetteApprox;
 import silhEval.silhouettes.SimplifiedSilhouette;
 import silhEval.utils.Utils;
@@ -1003,6 +1004,42 @@ public class ExperimentTests {
 		}
 
 		System.out.println("best choice: " + (simplBest+1));
+		
+		/********FRAHLER SOLHER SILHOUETTE*********/
+
+		double[] fralhSolhSilhouettes = new double[confs.length];
+
+		for (int i = 0; i < fralhSolhSilhouettes.length; i++) {
+			FrahlerSolherSilhouette simpl = new FrahlerSolherSilhouette();
+			fralhSolhSilhouettes[i] = simpl.score(confs[i]);
+			log.writeLn("Frahler Solher silhouette computation for test dataset " + dataFiles[i]);
+			log.writeLn("silhouette calculated with Frahler Solher algorithm: " + fralhSolhSilhouettes[i]);
+			log.writeLn("kmeans cost function (sum): " + costs[i] +"\n");
+		}
+
+		log.writeLn("***\n");
+
+		int frahlBest = 0;
+		max = -2.0;
+		for (int i = 0; i < fralhSolhSilhouettes.length; i++) {
+			if (fralhSolhSilhouettes[i] > max) {
+				max = fralhSolhSilhouettes[i];
+				frahlBest = i;
+			}
+		}
+		log.writeLn("Choice: " + (frahlBest+1));
+
+
+
+		System.out.println("Sampling phase - Minumum expected sample sizes: ");
+		log.writeLn("Minimum expected sample size: ");
+
+		for (int i = 0; i < confs.length; i++) {
+			System.out.println(ts[i]);
+			log.writeLn(""+ts[i]);
+		}
+
+		System.out.println("best choice: " + (simplBest+1));
 
 		int choicePPS;
 		int choiceUnif;
@@ -1058,9 +1095,11 @@ public class ExperimentTests {
 		System.out.println("Uniform: "+ (choiceUnif+1));
 
 		double[] errorsSimple = new double[confs.length];
+		double[] errorsFraSol = new double[confs.length];
 		
 		for (int i = 0; i < errorsSimple.length; i++) {
 			errorsSimple[i] = Math.abs(simplifiedSilhouettes[i] - exactSilhouettes[i]);
+			errorsFraSol[i] = Math.abs(fralhSolhSilhouettes[i] - exactSilhouettes[i]);
 		}
 
 		for (int i = 0; i < confs.length; i++) {
@@ -1068,6 +1107,9 @@ public class ExperimentTests {
 					+ "   Simplified:\n"
 					+ "       silhouette: "+simplifiedSilhouettes[i]+"\n"
 					+ "       error: "+errorsSimple[i]+"\n"
+					+ "   Frahler and Solher:\n"
+					+ "       silhouette: "+fralhSolhSilhouettes[i]+"\n"
+					+ "       error: "+errorsFraSol[i]+"\n"
 					+ "   PPS:\n"
 					+ "       silhouette: "+appxSilhouettesPPS[i]+"\n"
 					+ "       error: "+errorsPPS[i]+"\n"

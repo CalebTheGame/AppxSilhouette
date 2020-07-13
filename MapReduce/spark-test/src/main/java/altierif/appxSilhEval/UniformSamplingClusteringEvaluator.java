@@ -1,18 +1,14 @@
 package altierif.appxSilhEval;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.spark.TaskContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
-import org.apache.spark.api.java.function.MapGroupsFunction;
-import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.api.java.function.ReduceFunction;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.ml.evaluation.Evaluator;
-import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 import org.apache.spark.ml.param.ParamMap;
 import org.apache.spark.ml.param.ParamPair;
@@ -20,13 +16,10 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructType;
-
-import altierif.utils.Utils;
+import altierif.utils.MyPair;
+import altierif.utils.SampleAccumulator;
+import altierif.utils.SamplePair;
 import scala.collection.JavaConversions;
 
 /**
@@ -131,186 +124,188 @@ public class UniformSamplingClusteringEvaluator extends Evaluator {
 		@SuppressWarnings("unchecked")
 		Dataset<Row> coll = (Dataset<Row>)dataset;
 
-		double n = coll.count();
+		double all = coll.count();
 
 		List<Row> infos = coll.groupBy("prediction").count().collectAsList();
-		
+
+		SparkSession spark = SparkSession.getActiveSession().get();
+
+		JavaSparkContext sc = new JavaSparkContext(spark.sparkContext());
+
 		coll.printSchema();
 		if (this.partitions <= 0) {
 			this.partitions = 1;
 		}
 		Column[] columnArray = new Column[1];
 		columnArray[0] = new Column("index");
-		
+
 		coll = coll.repartition(this.partitions).cache();
 
 		int k = infos.size();
-		
-		
-		System.out.println("n:" + n);
+
+
+
+		System.out.println("n:" + all);
 		System.out.println("k:" + k);
 		System.out.println("t:" + t);
 		System.out.println("partitions:" + this.partitions);
-		
-		double[] clustSizes = new double[infos.size()];
+
+		Broadcast<int[]> dataInfo = sc.broadcast(new int[] { k, t });
+
+		double[] clustersSizes = new double[infos.size()];
 
 		for (Iterator<Row> iterator = infos.iterator(); iterator.hasNext();) {
 			Row row = (Row) iterator.next();
-			clustSizes[((Long)row.getAs("prediction")).intValue()] = ((Long)(row.getAs("count"))).doubleValue();
+			clustersSizes[((Long)row.getAs("prediction")).intValue()] = ((Long)(row.getAs("count"))).doubleValue();
 		}
-		
+
+		Broadcast<double[]> clustSizes = sc.broadcast(clustersSizes);
+
 		if (this.t == 0) {
-			t = (int) Math.ceil((1/(2*Math.pow(epsilon, 2)))*(Math.log(4)+Math.log(n)+Math.log(k)-Math.log(delta)));
+			t = (int) Math.ceil((1/(2*Math.pow(epsilon, 2)))*(Math.log(4)+Math.log(all)+Math.log(k)-Math.log(delta)));
 		}
 
-		double s0 = Math.ceil(Utils.log2(2*k/delta));
+		SampleAccumulator initsamples = new SampleAccumulator(k);
 
+		JavaSparkContext.toSparkContext(sc).register(initsamples);
+
+		SampleAccumulator samples = new SampleAccumulator(k);
+
+		JavaSparkContext.toSparkContext(sc).register(samples);
 
 		/**PHASE 1**/
 
 		/**
-		 * MAP PHASE 1: extraction of the initial sample (through Poisson sampling)
-		 * Creates copies of such sample, to be distributed to all buckets
+		 * Unpacking of scala vector
 		 **/
 
-		return coll.mapPartitions((MapPartitionsFunction<Row, Row>) iter -> 
+		Dataset<MyPair> coll2 = coll.map((MapFunction<Row, MyPair>) row -> 
 		{	
-			List<Row> rows = new LinkedList<Row>();
-			Row row;
+			Object[] temp;
+			double[] pivotarr;
 
-			while (iter.hasNext()) {
-				row = (Row) iter.next();
-
-				double clustSize = clustSizes[((Long)row.getAs("prediction")).intValue()];
-				
-				double probab = (t/clustSize);
-
-				if (clustSize > t) {
-
-					if (Math.random() < probab)
-					{
-						for (int i = 0; i < this.partitions; i++) {
-							rows.add(RowFactory.create(i , row.getAs("label"), row.getAs("features"), row.getAs("prediction"), probab, true));
-						}
-					}			
-					rows.add(RowFactory.create(TaskContext.getPartitionId() , row.getAs("label"), row.getAs("features"), row.getAs("prediction"), probab, false));
-
-				} else {
-					
-					for (int i = 0; i < this.partitions; i++) {
-						rows.add(RowFactory.create(i , row.getAs("label"), row.getAs("features"), row.getAs("prediction"), 1.0, true));
-					}
-
-					rows.add(RowFactory.create(TaskContext.getPartitionId(), row.getAs("label"), row.getAs("features"), row.getAs("prediction"), 1.0, false));
-
-				}
+			temp = JavaConversions.mutableSeqAsJavaList(((Row)(row.getAs("features"))).getAs("values")).toArray();
+			pivotarr = new double[temp.length];
+			for (int i = 0; i < temp.length; i++) {
+				pivotarr[i] = ((Number)temp[i]).doubleValue();
 			}
 
-			return rows.iterator();
+			return new MyPair(Vectors.dense(pivotarr), row.getAs("prediction"));
 		}
-		, 	RowEncoder.apply(
-				new StructType()
-				.add("index", DataTypes.IntegerType)
-				.add("label", DataTypes.DoubleType)
-				.add("features", new StructType().add("type", DataTypes.LongType).add("values", DataTypes.createArrayType(DataTypes.DoubleType)))
-				.add("prediction", DataTypes.LongType)
-				.add("probab", DataTypes.DoubleType)
-				.add("sample", DataTypes.BooleanType))
-				)
+		, 
+		Encoders.javaSerialization(MyPair.class)
+				);
+
+
+//		coll2.foreach((ForeachFunction<MyPair>) row ->{
+//
+//			int cluster = Long.valueOf(row.getClust()).intValue();
+//
+//			double clustSize = clustSizes.value()[cluster];
+//
+//
+//			if (clustSize > t) {
+//				if (Math.random() < ((2/clustSize)*s0.value().doubleValue()))
+//				{
+//					initsamples.add(new SamplePair(row.getFeats(), 1), cluster);
+//				}
+//			} else {
+//				samples.add(new SamplePair(row.getFeats(), 1.0), cluster);
+//			}
+//		});
+//
+//		int maxSize = 0;
+//
+//		for (int i = 0; i < k; i++) {
+//			maxSize = Math.max(initsamples.valueAt(i).size(), maxSize);
+//		}
+//
+//
+//		DistAccumulator distSums = new DistAccumulator(k, maxSize);
+//
+//		JavaSparkContext.toSparkContext(sc).register(distSums);
+//
+//		System.out.println("maxsize "+maxSize);
+//		
+//		Broadcast<List<SamplePair>[]> initsam = sc.broadcast(initsamples.value());
+
+//		/**
+//		 * Computes the distance sums from initial samples
+//		 * 
+//		 * **/
+//
+//
+//		coll2.foreach((ForeachFunction<MyPair>) elem ->{
+//
+//			int clust = Long.valueOf(elem.getClust()).intValue();
+//			Iterator<SamplePair> iterSam = initsam.value()[clust].iterator();
+//			int ct = 0;
+//			while (iterSam.hasNext()) {
+//				distSums.add(Math.sqrt(Vectors.sqdist(elem.getFeats(), iterSam.next().getFeats())), clust, ct);
+//				ct++;
+//			}
+//
+//
+//		});
+
+		/**
+		 * MAP PHASE 2: compute probabilities and collect the PPS sample
+		 * **/
+		
+//		Broadcast<double[][]> distances = sc.broadcast(distSums.value());
+
+
+		coll2.foreach((ForeachFunction<MyPair>) pivot ->{
+
+			int clust = Long.valueOf(pivot.getClust()).intValue();
+			double probability = dataInfo.getValue()[1]/clustSizes.value()[clust];
+			
+			if (Math.random() < probability)
+				samples.add(new SamplePair(pivot.getFeats(), probability), clust);
+
+		});
+
 
 		/**
 		 * REDUCE PHASE 3: computes the pointwise silhouettes value with the sampled points and sums them
 		 * 
 		 * **/
-
-		.repartition(this.partitions, columnArray)
 		
-		.mapPartitions((MapPartitionsFunction<Row, Double>) iter -> {
+		Broadcast<List<SamplePair>[]> PPSsam = sc.broadcast(samples.value());
 
-			@SuppressWarnings("unchecked")
-			LinkedList<Vector>[] samples = new LinkedList[clustSizes.length];
-			for (int i = 0; i < samples.length; i++) {
-				samples[i] = new LinkedList<Vector>();
-			}
-			
-			@SuppressWarnings("unchecked")
-			LinkedList<Double>[] probabs = new LinkedList[clustSizes.length];
-			for (int i = 0; i < probabs.length; i++) {
-				probabs[i] = new LinkedList<Double>();
-			}
-			
+		return coll2.map((MapFunction<MyPair, Double>) pivot ->{
 
-			@SuppressWarnings("unchecked")
-			LinkedList<Vector>[] rowsx0 = new LinkedList[clustSizes.length];
-			for (int i = 0; i < rowsx0.length; i++) {
-				rowsx0[i] = new LinkedList<Vector>();
-			}
-			while (iter.hasNext()) {
-				Row pivot = (Row) iter.next();
-				Object[] temp = JavaConversions.mutableSeqAsJavaList(pivot.getStruct(2).getAs("values")).toArray();
-				double[] pivotarr = new double[temp.length];
-				for (int r = 0; r < temp.length; r++) {
-					pivotarr[r] = ((Number)temp[r]).doubleValue();
-				}
-				if (pivot.getBoolean(5)) {
-					samples[Long.valueOf(pivot.getLong(3)).intValue()].add(Vectors.dense(pivotarr));
-					probabs[Long.valueOf(pivot.getLong(3)).intValue()].add(pivot.getDouble(4));
-				} else {
-					rowsx0[Long.valueOf(pivot.getLong(3)).intValue()].add(Vectors.dense(pivotarr));
-				}
-			}
-
-			/**POINTWISE SILHOUETTE SUMS**/
-			double sum = 0.0;
-			
-			for (int i = 0; i < rowsx0.length; i++) {
-				Iterator<Vector> iterx0 = rowsx0[i].iterator();
-				
-				while (iterx0.hasNext()) {
-					Vector pivot = iterx0.next();
-					double a = 0.0;
-					double b = Double.MAX_VALUE;
-					
-					for (int j = 0; j < samples.length; j++) {
-						Iterator<Vector> iterx1 = samples[j].iterator();
-						Iterator<Double> iterprobabs = probabs[j].iterator();
-						if (i == j) {
-							while (iterx1.hasNext()) {
-								Vector sample = iterx1.next();
-								Double probab = iterprobabs.next();
-								a = a + (Math.sqrt(Vectors.sqdist(pivot, sample)))/probab.doubleValue();
-							}
-							a = a/(clustSizes[i]-1.0);
-						} else {
-							double temp = 0.0;
-							while (iterx1.hasNext()) {
-								Vector sample = iterx1.next();
-								Double probab = iterprobabs.next();
-								temp = temp + (Math.sqrt(Vectors.sqdist(pivot, sample)))/probab.doubleValue();
-							}
-							b = Double.min(b, temp/clustSizes[i]);
-						}
+			int clust = Long.valueOf(pivot.getClust()).intValue();
+			double a = 0.0;
+			double b = Double.MAX_VALUE;
+			List<SamplePair>[] list = PPSsam.value();
+			for (int i = 0; i < list.length; i++) {
+				Iterator<SamplePair> samp = list[i].iterator();
+				if (i == clust) {
+					while (samp.hasNext()) {
+						SamplePair s = samp.next();
+						a = a + (Math.sqrt(Vectors.sqdist(pivot.getFeats(), s.getFeats()))/s.getProbability());
 					}
-					sum = sum + (b-a)/Double.max(a, b);
+					a = a/(clustSizes.value()[i]-1.0);
+				}
+				else{
+					double temp = 0.0;
+					while (samp.hasNext()) {
+						SamplePair s = samp.next();
+						temp = temp + (Math.sqrt(Vectors.sqdist(pivot.getFeats(), s.getFeats()))/s.getProbability());
+					}
+					b = Double.min(b, (temp/clustSizes.value()[i]));
 				}
 			}
-			ArrayList<Double> list = new ArrayList<>();
-			list.add(sum);
-			return list.iterator();
-		},	Encoders.DOUBLE()
-				)
-
+			return Double.valueOf((b-a)/Double.max(a, b));
+		},
+				Encoders.DOUBLE())
 		
-		/**PHASE 4**/
-
-		/**MAP-REDUCE PHASE 4: sums all the silhouette sums into an only one**/
-
-
-//		return sums
-				.reduce((ReduceFunction<Double>) (v1, v2 ) ->{
-			return v1.doubleValue()+v2.doubleValue();
-		})
-				.doubleValue()/n;
+		/** sums all the silhouette sums into an only one**/		
+				
+		.reduce((ReduceFunction<Double>) (s1,s2) ->{
+			return (s1.doubleValue() + s2.doubleValue());
+		}).doubleValue()/all;
 
 	}
 
