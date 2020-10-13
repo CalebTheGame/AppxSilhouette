@@ -1,9 +1,9 @@
 # AppxSilhouette
 Source code for PPS Sampling - Based Approximation Silhouette algorithm
 
-This git includes both versions of the code developed for the work of Altieri, Pietracaprina, Pucci, Vandin: "Scalable Distributed Approximation of Internal Measures for Clustering Evaluation". (submitted to VLDB2020, arXiv https://arxiv.org/abs/2003.01430).
+This git includes both versions of the code developed for the work of Altieri, Pietracaprina, Pucci, Vandin: "Scalable Distributed Approximation of Internal Measures for Clustering Evaluation". (submitted to SDM21, arXiv https://arxiv.org/abs/2003.01430).
 
-The "master" branch of this git features the code to be used as reference for the reviewers of VLDB2020 conference. Eventual other branches are intended to be experimental and not part of the submission.
+The "master" branch of this git features the code to be used as reference for the reviewers of SDM21 conference. Eventual other branches are intended to be experimental and not part of the submission.
 
 ## Description
 
